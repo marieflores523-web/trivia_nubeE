@@ -33,15 +33,15 @@
 <body>
   <div class="container">
     <h1>☁️ CLOUD TRIVIA!</h1>
-    <p class="subtitle">Demuestra tus conocimientos de Computación en la Nube</p>
+    <p class="subtitle">Demuestra tus conocimientos de Computación en la Nube (10 Preguntas)</p>
 
     <div id="setup-screen">
-      <button class="btn" onclick="startRandomGame()">🎲 INICIAR PARTIDA</button>
+      <button class="btn" onclick="startRandomGame()">🎲 INICIAR PARTIDA DE 10 PREGUNTAS</button>
     </div>
 
     <div id="game-screen" class="hidden">
       <div class="game-stats">
-        <div class="stat-box">Pregunta: <span id="q-num">1</span>/5</div>
+        <div class="stat-box">Pregunta: <span id="q-num">1</span>/10</div>
         <div class="timer-circle" id="timer">45</div>
         <div class="stat-box">Puntos: <span id="score">0</span></div>
       </div>
@@ -60,19 +60,27 @@
 
     <div id="final-screen" class="hidden">
       <h2>🎉 ¡Juego Completado!</h2>
-      <p style="margin:20px 0; font-size:1.5rem;">Puntuación: <strong id="final-score" style="color:#26890c;">0</strong> pts</p>
+      <p style="margin:20px 0; font-size:1.5rem;">Puntuación final: <strong id="final-score" style="color:#26890c;">0</strong> pts</p>
       <button class="btn" onclick="resetToSetup()">🔄 Jugar de Nuevo</button>
     </div>
   </div>
 
   <script>
     let questions = [], currentQ = 0, score = 0, timer, timeLeft = 45;
+    
+    // Banco extendido con más de 10 preguntas
     const questionBank = [
-      { question: "¿Qué modelo de servicio ofrece infraestructura como máquinas virtuales?", options: ["SaaS", "IaaS", "PaaS", "FaaS"], correct: 1, explanation: "IaaS provee recursos informáticos básicos." },
-      { question: "¿Cuál es un ejemplo de servicio SaaS?", options: ["Amazon EC2", "Google Cloud Storage", "Gmail", "AWS Lambda"], correct: 2, explanation: "SaaS provee software listo para el usuario." },
-      { question: "¿Qué permite aumentar o reducir recursos según la demanda en la nube?", options: ["Virtualización fija", "Elasticidad", "Servidor Dedicado", "Ancho de banda estático"], correct: 1, explanation: "La elasticidad adapta recursos en tiempo real." },
-      { question: "¿Qué término describe ejecutar código sin gestionar servidores?", options: ["Serverless / FaaS", "Bare Metal", "On-Premises", "Monolito"], correct: 0, explanation: "Serverless abstrae la administración de servidores." },
-      { question: "¿Qué es la Nube Híbrida?", options: ["Solo servidores locales", "Nube privada + Nube pública", "Dos nubes públicas", "Redes sin internet"], correct: 1, explanation: "Combina infraestructura propia con nube pública." }
+      { question: "¿Qué modelo de servicio ofrece infraestructura como máquinas virtuales?", options: ["SaaS", "IaaS", "PaaS", "FaaS"], correct: 1, explanation: "IaaS provee recursos informáticos básicos como procesamiento y almacenamiento." },
+      { question: "¿Cuál es un ejemplo clásico de servicio SaaS?", options: ["Amazon EC2", "Google Cloud Storage", "Gmail / Google Workspace", "AWS Lambda"], correct: 2, explanation: "SaaS provee software completamente gestionado listo para usar." },
+      { question: "¿Qué permite aumentar o reducir recursos según la demanda en la nube?", options: ["Virtualización fija", "Elasticidad y Escalabilidad", "Servidor Dedicado", "Ancho de banda estático"], correct: 1, explanation: "La elasticidad adapta los recursos dinámicamente según la carga." },
+      { question: "¿Qué término describe ejecutar código sin gestionar servidores?", options: ["Serverless / FaaS", "Bare Metal", "On-Premises", "Monolito"], correct: 0, explanation: "Serverless desentiende al desarrollador del mantenimiento de servidores." },
+      { question: "¿Qué es la Nube Híbrida?", options: ["Solo servidores locales", "Nube privada + Nube pública", "Dos nubes públicas", "Redes sin internet"], correct: 1, explanation: "Integra la infraestructura propia con recursos de nubes públicas." },
+      { question: "¿Cuál de los siguientes es un servicio de almacenamiento de objetos en la nube?", options: ["AWS S3 / Google Cloud Storage", "RAM dedicada", "Disco rígido físico local", "CPU Virtual"], correct: 0, explanation: "El almacenamiento de objetos guarda datos en la nube accesible por API." },
+      { question: "¿Qué significa el modelo PaaS?", options: ["Platform as a Service", "Process as a Service", "Public Access Area Service", "Program as a Service"], correct: 0, explanation: "PaaS ofrece un entorno completo para desarrollar sin administrar la infraestructura subyacente." },
+      { question: "¿Qué concepto garantiza la continuidad del servicio si falla un servidor?", options: ["Baja latencia", "Alta Disponibilidad (HA)", "Ancho de banda", "Compresión de datos"], correct: 1, explanation: "La Alta Disponibilidad asegura que otro sistema tome el control automáticamente si hay fallas." },
+      { question: "¿Qué modelo de despliegue es utilizado de forma compartida por múltiples organizaciones?", options: ["Nube Privada", "Nube Pública / Comunitaria", "Nube Local", "Servidor individual"], correct: 1, explanation: "Las nubes públicas o comunitarias comparten recursos físicos de forma segura." },
+      { question: "¿Qué componente de la nube distribuye el tráfico entre varios servidores?", options: ["Balanceador de carga (Load Balancer)", "Firewall local", "Switch físico", "Módem"], correct: 0, explanation: "El balanceador reparte las peticiones entrantes para no saturar ningún equipo." },
+      { question: "¿Cuál es una ventaja clave del pago por uso (Pay-as-you-go) en la nube?", options: ["Comprar hardware costoso por adelantado", "Solo pagar por los recursos computacionales consumidos", "Pagar tarifas fijas sin importar el uso", "Contratos obligatorios a 10 años"], correct: 1, explanation: "Evita costos iniciales altos permitiendo pagar únicamente lo consumido." }
     ];
 
     function shuffle(array) {
@@ -80,7 +88,8 @@
     }
 
     function startRandomGame() {
-      questions = shuffle(questionBank).slice(0, 5).map(q => {
+      // Selecciona 10 preguntas al azar
+      questions = shuffle(questionBank).slice(0, 10).map(q => {
         let opts = shuffle(q.options.map((opt, i) => ({ text: opt, isCorrect: i === q.correct })));
         return { question: q.question, options: opts.map(o => o.text), correct: opts.findIndex(o => o.isCorrect), explanation: q.explanation };
       });
