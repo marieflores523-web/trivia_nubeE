@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Kahoot! - Reto Universitario</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
+    body { background-color: #46178f; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .container { width: 100%; max-width: 900px; background: #ffffff; color: #333333; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; }
+    h1 { font-size: 2.5rem; color: #46178f; margin-bottom: 10px; font-weight: 900; }
+    p.subtitle { color: #666; margin-bottom: 25px; font-weight: 700; }
+    .btn { background-color: #26890c; color: white; border: none; padding: 18px 36px; font-size: 1.3rem; font-weight: bold; border-radius: 12px; cursor: pointer; box-shadow: 0 5px 0 #185906; margin: 10px; }
+    .btn:hover { opacity: 0.9; }
+    .game-stats { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; }
+    .stat-box { background: #f0f0f0; padding: 10px 20px; border-radius: 20px; color: #333; }
+    .timer-circle { width: 65px; height: 65px; border-radius: 50%; background: #864cbf; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; }
+    .question-box { background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 15px; padding: 25px; margin-bottom: 25px; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+    .question-text { font-size: 1.4rem; font-weight: 700; color: #222; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .option-btn { color: white; border: none; padding: 20px; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; min-height: 80px; }
+    .opt-0 { background-color: #e21b3c; }
+    .opt-1 { background-color: #1368ce; }
+    .opt-2 { background-color: #d89e00; }
+    .opt-3 { background-color: #26890c; }
+    .feedback { margin-top: 20px; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 1.1rem; display: none; }
+    .feedback.correct { background-color: #d4edda; color: #155724; }
+    .feedback.incorrect { background-color: #f8d7da; color: #721c24; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>☁️ CLOUD TRIVIA!</h1>
+    <p class="subtitle">Demuestra tus conocimientos de Computación en la Nube (10 Preguntas)</p>
+
+    <div id="setup-screen">
+      <button class="btn" onclick="startRandomGame()">🎲 INICIAR PARTIDA DE 10 PREGUNTAS</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+      <div class="game-stats">
+        <div class="stat-box">Pregunta: <span id="q-num">1</span>/10</div>
+        <div class="timer-circle" id="timer">45</div>
+        <div class="stat-box">Puntos: <span id="score">0</span></div>
+      </div>
+      <div class="question-box">
+        <div class="question-text" id="question">Cargando...</div>
+      </div>
+      <div class="options-grid">
+        <button class="option-btn opt-0" onclick="selectAnswer(0)"><span id="opt0-text"></span></button>
+        <button class="option-btn opt-1" onclick="selectAnswer(1)"><span id="opt1-text"></span></button>
+        <button class="option-btn opt-2" onclick="selectAnswer(2)"><span id="opt2-text"></span></button>
+        <button class="option-btn opt-3" onclick="selectAnswer(3)"><span id="opt3-text"></span></button>
+      </div>
+      <div id="feedback" class="feedback"></div>
+      <button id="next-btn" class="btn hidden" style="margin-top:20px;" onclick="nextQuestion()">Siguiente ➡️</button>
+    </div>
+
+    <div id="final-screen" class="hidden">
+      <h2>🎉 ¡Juego Completado!</h2>
+      <p style="margin:20px 0; font-size:1.5rem;">Puntuación final: <strong id="final-score" style="color:#26890c;">0</strong> pts</p>
+      <button class="btn" onclick="resetToSetup()">🔄 Jugar de Nuevo</button>
+    </div>
+  </div>
+
+  <script>
+    let questions = [], currentQ = 0, score = 0, timer, timeLeft = 45;
+    
+    // Banco extendido con más de 10 preguntas
+    const questionBank = [
+      { question: "¿Qué modelo de servicio ofrece infraestructura como máquinas virtuales?", options: ["SaaS", "IaaS", "PaaS", "FaaS"], correct: 1, explanation: "IaaS provee recursos informáticos básicos como procesamiento y almacenamiento." },
+      { question: "¿Cuál es un ejemplo clásico de servicio SaaS?", options: ["Amazon EC2", "Google Cloud Storage", "Gmail / Google Workspace", "AWS Lambda"], correct: 2, explanation: "SaaS provee software completamente gestionado listo para usar." },
+      { question: "¿Qué permite aumentar o reducir recursos según la demanda en la nube?", options: ["Virtualización fija", "Elasticidad y Escalabilidad", "Servidor Dedicado", "Ancho de banda estático"], correct: 1, explanation: "La elasticidad adapta los recursos dinámicamente según la carga." },
+      { question: "¿Qué término describe ejecutar código sin gestionar servidores?", options: ["Serverless / FaaS", "Bare Metal", "On-Premises", "Monolito"], correct: 0, explanation: "Serverless desentiende al desarrollador del mantenimiento de servidores." },
+      { question: "¿Qué es la Nube Híbrida?", options: ["Solo servidores locales", "Nube privada + Nube pública", "Dos nubes públicas", "Redes sin internet"], correct: 1, explanation: "Integra la infraestructura propia con recursos de nubes públicas." },
+      { question: "¿Cuál de los siguientes es un servicio de almacenamiento de objetos en la nube?", options: ["AWS S3 / Google Cloud Storage", "RAM dedicada", "Disco rígido físico local", "CPU Virtual"], correct: 0, explanation: "El almacenamiento de objetos guarda datos en la nube accesible por API." },
+      { question: "¿Qué significa el modelo PaaS?", options: ["Platform as a Service", "Process as a Service", "Public Access Area Service", "Program as a Service"], correct: 0, explanation: "PaaS ofrece un entorno completo para desarrollar sin administrar la infraestructura subyacente." },
+      { question: "¿Qué concepto garantiza la continuidad del servicio si falla un servidor?", options: ["Baja latencia", "Alta Disponibilidad (HA)", "Ancho de banda", "Compresión de datos"], correct: 1, explanation: "La Alta Disponibilidad asegura que otro sistema tome el control automáticamente si hay fallas." },
+      { question: "¿Qué modelo de despliegue es utilizado de forma compartida por múltiples organizaciones?", options: ["Nube Privada", "Nube Pública / Comunitaria", "Nube Local", "Servidor individual"], correct: 1, explanation: "Las nubes públicas o comunitarias comparten recursos físicos de forma segura." },
+      { question: "¿Qué componente de la nube distribuye el tráfico entre varios servidores?", options: ["Balanceador de carga (Load Balancer)", "Firewall local", "Switch físico", "Módem"], correct: 0, explanation: "El balanceador reparte las peticiones entrantes para no saturar ningún equipo." },
+      { question: "¿Cuál es una ventaja clave del pago por uso (Pay-as-you-go) en la nube?", options: ["Comprar hardware costoso por adelantado", "Solo pagar por los recursos computacionales consumidos", "Pagar tarifas fijas sin importar el uso", "Contratos obligatorios a 10 años"], correct: 1, explanation: "Evita costos iniciales altos permitiendo pagar únicamente lo consumido." }
+    ];
+
+    function shuffle(array) {
+      return JSON.parse(JSON.stringify(array)).sort(() => Math.random() - 0.5);
+    }
+
+    function startRandomGame() {
+      // Selecciona 10 preguntas al azar
+      questions = shuffle(questionBank).slice(0, 10).map(q => {
+        let opts = shuffle(q.options.map((opt, i) => ({ text: opt, isCorrect: i === q.correct })));
+        return { question: q.question, options: opts.map(o => o.text), correct: opts.findIndex(o => o.isCorrect), explanation: q.explanation };
+      });
+      currentQ = 0; score = 0;
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      clearInterval(timer); timeLeft = 45;
+      document.getElementById('timer').innerText = timeLeft;
+      const q = questions[currentQ];
+      document.getElementById('q-num').innerText = currentQ + 1;
+      document.getElementById('question').innerText = q.question;
+      document.getElementById('score').innerText = score;
+      q.options.forEach((opt, i) => document.getElementById(`opt${i}-text`).innerText = opt);
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = false);
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById('next-btn').classList.add('hidden');
+      timer = setInterval(() => {
+        timeLeft--; document.getElementById('timer').innerText = timeLeft;
+        if (timeLeft <= 0) selectAnswer(-1);
+      }, 1000);
+    }
+
+    function selectAnswer(i) {
+      clearInterval(timer);
+      const q = questions[currentQ];
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+      const fb = document.getElementById('feedback'); fb.style.display = 'block';
+      if (i === q.correct) {
+        score += 500 + (timeLeft * 15);
+        document.getElementById('score').innerText = score;
+        fb.className = 'feedback correct'; fb.innerHTML = `🎯 ¡CORRECTO!<br><small>${q.explanation}</small>`;
+      } else {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = `❌ Incorrecto. La respuesta era: <strong>${q.options[q.correct]}</strong>`;
+      }
+      document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ < questions.length) loadQuestion();
+      else {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('final-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+      }
+    }
+
+    function resetToSetup() {
+      document.getElementById('final-screen').classList.add('hidden');
+      document.getElementById('setup-screen').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
